@@ -1,6 +1,6 @@
 # ZenithFlow
 
-A high-performance B2B SaaS backend built with **NestJS**, **Prisma**, and **PostgreSQL**, using a multi-tenant shared-schema architecture. ZenithFlow tackles two hard problems in an HR context: multi-tenant data isolation and state-dependent business workflows.
+A B2B SaaS backend built with **NestJS**, **Prisma**, and **PostgreSQL**, using a multi-tenant shared-schema architecture. ZenithFlow tackles two hard problems in an HR context: multi-tenant data isolation and state-dependent business workflows.
 
 Multiple companies (tenants) can manage their workforce, departments, and leave policies on shared infrastructure, with a "Zero-Trust" approach to data access.
 
@@ -8,7 +8,7 @@ Multiple companies (tenants) can manage their workforce, departments, and leave 
 
 ## Features
 
-- **Multitenancy**: Row-level tenant isolation. Every database query is automatically scoped to the authenticated company using `AsyncLocalStorage` and Prisma extensions.
+- **Multitenancy**: Application-level tenant isolation. Every database query is automatically scoped to the authenticated company using `AsyncLocalStorage` and Prisma extensions.
 - **Auth & RBAC**: JWT-based authentication with four granular roles: `SUPER_ADMIN`, `HR_ADMIN`, `MANAGER`, and `EMPLOYEE`.
 - **Company onboarding**: Atomic registration that creates the company profile and its primary `SUPER_ADMIN` account in a single transaction.
 - **Employee management**: Full lifecycle support: inviting, onboarding, transferring between departments, and offboarding.
@@ -18,7 +18,7 @@ Multiple companies (tenants) can manage their workforce, departments, and leave 
 - **Audit log**: Immutable trail of every status change, recording the who, what, and when for compliance.
 - **Pagination & filtering**: Standardized query handling across all list endpoints, supporting `page`, `limit`, and multi-field filtering.
 - **Rate limiting**: Brute-force protection on authentication and sensitive onboarding endpoints.
-- **Input validation**: Strict DTO validation and sanitization using `class-validator` and Zod.
+- **Input validation**: Strict DTO validation and sanitization using `class-validator`.
 - **Swagger docs**: Interactive API documentation and testing UI at `/api`.
 - **Dockerised**: Complete development environment with a single `docker-compose` command.
 
@@ -43,7 +43,16 @@ Multiple companies (tenants) can manage their workforce, departments, and leave 
 
 **Multi-tenant isolation.** ZenithFlow uses a shared-schema approach. To prevent data leaks, a Tenant Middleware extracts the `tenantId` from each request and stores it in an `AsyncLocalStorage` context. The Prisma Client is then extended to inject a mandatory `where: { tenantId }` clause into every read and write operation automatically.
 
-**Leave state machine.** Leave management is a controlled flow, not just a status field. A request cannot jump between states (for example, from `PENDING` straight to `CANCELLED`) without following the defined transitions. This keeps HR records consistent and prevents logical errors.
+**Leave state machine.** Leave management is a controlled flow, not just a status field. Every status change must follow a defined transition, and anything else is rejected:
+
+| From | Allowed transitions |
+|------|---------------------|
+| `PENDING` | `APPROVED`, `REJECTED`, `CANCELLED` |
+| `APPROVED` | `CANCELLED` |
+| `REJECTED` | none |
+| `CANCELLED` | none  |
+
+Approved requests deduct from the employee's leave balance, and every transition is written to the audit log. This keeps HR records consistent and prevents invalid states.
 
 ---
 
@@ -60,8 +69,8 @@ Multiple companies (tenants) can manage their workforce, departments, and leave 
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/Tee-chan/zenith-flow.git
-cd zenith-flow
+git clone https://github.com/Tee-chan/zenithFlow.git
+cd zenithFlow
 npm install
 ```
 
