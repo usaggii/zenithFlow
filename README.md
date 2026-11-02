@@ -1,24 +1,49 @@
- # zenithFlow
+# ZenithFlow
 
-A high-performance B2B SaaS backend built with NestJS, Prisma, and PostgreSQL, implementing a multi-tenant shared-schema architecture. It is engineered to solve the complex problem of multi-tenant data isolation and state-dependent business workflows in an HR context. The system allows multiple companies (tenants) to manage their workforce, departments, and leave policies on a shared infrastructure with a "Zero-Trust" data access approach.
+A high-performance B2B SaaS backend built with **NestJS**, **Prisma**, and **PostgreSQL**, using a multi-tenant shared-schema architecture. ZenithFlow tackles two hard problems in an HR context: multi-tenant data isolation and state-dependent business workflows.
+
+Multiple companies (tenants) can manage their workforce, departments, and leave policies on shared infrastructure, with a "Zero-Trust" approach to data access.
 
 ---
 
 ## Features
 
-- **Multitenancy**: Row-level tenant isolation — every database query is automatically scoped to the authenticated company using AsyncLocalStorage and Prisma extensions.
-- **Auth & RBAC**: Secure JWT-based authentication featuring four granular roles: SUPER_ADMIN, HR_ADMIN, MANAGER, and EMPLOYEE.
-- **Company onboarding**:  Atomic registration workflow that creates a company profile and the primary SUPER_ADMIN account in a single transaction.
-- **Employee management**:  Lifecycle management including inviting, onboarding, transferring between departments, and offboarding.
+- **Multitenancy**: Row-level tenant isolation. Every database query is automatically scoped to the authenticated company using `AsyncLocalStorage` and Prisma extensions.
+- **Auth & RBAC**: JWT-based authentication with four granular roles: `SUPER_ADMIN`, `HR_ADMIN`, `MANAGER`, and `EMPLOYEE`.
+- **Company onboarding**: Atomic registration that creates the company profile and its primary `SUPER_ADMIN` account in a single transaction.
+- **Employee management**: Full lifecycle support: inviting, onboarding, transferring between departments, and offboarding.
 - **Department management**: Hierarchical org structures with manager assignments and nested department views.
-- **Leave workflow**: A strict state-machine driven process for submitting, approving, rejecting, and cancelling leave requests.
-- **Leave balances**:  Real-time balance tracking per employee and leave type; approved requests automatically deduct from allocated days.
-- **Audit log**:  Immutable trails for every status change — recording the "Who, What, and When" for compliance.
-- **Pagination & filtering**: Standardized query handling across all list endpoints supporting page, limit, and multi-field filtering.
+- **Leave workflow**: A strict state machine for submitting, approving, rejecting, and cancelling leave requests.
+- **Leave balances**: Real-time balance tracking per employee and leave type. Approved requests automatically deduct from allocated days.
+- **Audit log**: Immutable trail of every status change, recording the who, what, and when for compliance.
+- **Pagination & filtering**: Standardized query handling across all list endpoints, supporting `page`, `limit`, and multi-field filtering.
 - **Rate limiting**: Brute-force protection on authentication and sensitive onboarding endpoints.
-- **Input validation**: Strict DTO validation and data sanitization using class-validator and Zod logic
-- **Swagger docs**: Fully interactive API documentation and testing interface available at /api.
-- **Dockerised**: Complete development environment orchestration with a single docker-compose command.
+- **Input validation**: Strict DTO validation and sanitization using `class-validator` and Zod.
+- **Swagger docs**: Interactive API documentation and testing UI at `/api`.
+- **Dockerised**: Complete development environment with a single `docker-compose` command.
+
+---
+
+## Tech Stack
+
+| Layer | Choice | Why |
+|-------|--------|-----|
+| Framework | NestJS | Modular, TypeScript-first, built-in DI |
+| Language | TypeScript | Type safety, better DX |
+| Database | PostgreSQL 16 | Relational data, ACID transactions, strong fit for multi-tenancy. Native row-level security *(planned)* |
+| ORM | Prisma 7 (with driver adapters) | Type-safe query extensions that automate tenant isolation |
+| Cache / Queue *(planned)* | Redis | Background job queues, distributed locking, and caching |
+| Auth | JWT + Passport | Stateless, scalable, embeds tenant context |
+| Docs | Swagger (`@nestjs/swagger`) | Auto-generated and interactive |
+| Containerisation | Docker + Compose | Reproducible dev environment |
+
+---
+
+## Architectural Highlights
+
+**Multi-tenant isolation.** ZenithFlow uses a shared-schema approach. To prevent data leaks, a Tenant Middleware extracts the `tenantId` from each request and stores it in an `AsyncLocalStorage` context. The Prisma Client is then extended to inject a mandatory `where: { tenantId }` clause into every read and write operation automatically.
+
+**Leave state machine.** Leave management is a controlled flow, not just a status field. A request cannot jump between states (for example, from `PENDING` straight to `CANCELLED`) without following the defined transitions. This keeps HR records consistent and prevents logical errors.
 
 ---
 
@@ -30,82 +55,67 @@ A high-performance B2B SaaS backend built with NestJS, Prisma, and PostgreSQL, i
 
 ---
 
-### Setup
-1. **Clone & Install**
-   ```bash
-   git clone https://github.com/
-   cd zenith-flow
-   npm install
-   ```
+## Getting Started
 
-2. **Environment Configuration**
-   ```bash
-   cp .env.example .env
-   # Ensure DATABASE_URL is set correctly for your terminal
-   ```
+### 1. Clone and install
 
-3. **Spin up Infrastructure**
-   ```bash
-   docker-compose up -d
-   ```
+```bash
+git clone https://github.com/Tee-chan/zenith-flow.git
+cd zenith-flow
+npm install
+```
 
-4. **Database Initialization (Prisma 7)**
-   ```bash
-   # Generate the client
-   npx prisma generate
-   
-   # Run migrations to sync the schema
-   npx prisma migrate dev --name init_schema
+### 2. Configure the environment
 
-   #optional: seed initial data
-   npm run seed
-   ```
+```bash
+cp .env.example .env
+```
 
-5. **Start the Application**
-   ```bash
-   npm run start:dev
-  
-   ```
----
+Make sure `DATABASE_URL` in `.env` is correct for your setup.
 
-# Production
+### 3. Start the infrastructure
+
+```bash
+docker-compose up -d
+```
+
+### 4. Initialize the database (Prisma 7)
+
+```bash
+# Generate the Prisma client
+npx prisma generate
+
+# Run migrations to sync the schema
+npx prisma migrate dev --name init_schema
+
+# Optional: seed initial data
+npm run seed
+```
+
+### 5. Start the application
+
+```bash
+npm run start:dev
+```
+
+### Production
+
+```bash
 npm run build
 npm run start:prod
 ```
----
-
- ## Architectural Highlights
- 
- **Multi-Tenant Isolation Logic**: ZenithFlow uses a Shared Schema approach. To prevent "Data Leaks," the system implements a Tenant Middleware that extracts the tenantId from the request and stores it in an AsyncLocalStorage context. The Prisma Client is then extended to inject a mandatory where: { tenantId } clause into every read/write operation automatically.
- 
- **Leave State Machine**: The leave management system isn't just a status update; it’s a controlled flow. A request cannot move from PENDING to CANCELLED without following defined transitions, ensuring data integrity and preventing logical errors in HR records.
 
 ---
 
 ## API Documentation
 
-Once the server is running, 
-visit http://localhost:3000/api to explore the interactive Swagger documentation.
+Once the server is running, open [http://localhost:3000/api](http://localhost:3000/api) to explore the interactive Swagger docs.
 
----
-
-## Tech Stack
-
-| Layer | Choice | Why |
-|-------|--------|-----|
-| Framework | NestJS | Modular, TypeScript-first, DI built-in |
-| Language | TypeScript | Type safety, better DX |
-| Database | PostgreSQL 16 | Relational data, Row-level seurity, ACID transactions, strong for multi-tenant |
-| ORM | Prisma 7 (with driver Adapters)| type-safe query extensions to automate tenant isolation |
-| Cache/Queue |Redis | Handle asynchronous background jobs(Queues), Distributed locking and Performance(caching). |
-| Auth | JWT + Passport | Stateless, scalable, embeds tenant context |
-| Docs | Swagger (@nestjs/swagger) | Auto-generated, interactive |
-| Containerisation | Docker + Compose | Reproducible dev environment |
 ---
 
 ## Author
 
-Tenshi — [GitHub](https://github.com/Tee-chan) · [LinkedIn](https://linkedin.com/in/georgeangel1)
+**Tenshi** — [GitHub](https://github.com/Tee-chan) · [LinkedIn](https://linkedin.com/in/georgeangel1)
 
 ---
 
