@@ -60,7 +60,7 @@ Approved requests deduct from the employee's leave balance, and every transition
 
 - Node.js v20+
 - Docker and Docker Compose
-- npm or yarn
+- pnpm
 
 ---
 

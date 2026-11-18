@@ -29,6 +29,6 @@ import { OnboardingModule } from './modules/onboarding/onboarding.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(TenantMiddleware).exclude('onboarding/register').forRoutes('*');
+    consumer.apply(TenantMiddleware).exclude('onboarding/register').forRoutes('*path');
   }
 }

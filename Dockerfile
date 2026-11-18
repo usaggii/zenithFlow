@@ -1,19 +1,32 @@
 # development stage
-FROM node:20-alpine as development
+# Use a lightweight Node base image
+FROM node:20-alpine AS development
 
+# Install pnpm globally inside the container
+RUN npm install -g pnpm
+
+# Set the working directory inside the container
 WORKDIR /app
 
-COPY package*.json ./
+# Copy configuration files first (for efficient caching)
+COPY package.json pnpm-lock.yaml ./
 
-RUN npm install 
+# Install all dependencies
+RUN pnpm install
+
+# Copy the rest of your application code
+COPY . .
 
 # COPY prisma ./prisma  #already mounted prisma in docker-compose.yml
 
 # RUN npx prisma generate  #do not run generate prisma client for development, generating in package.json(instart:dev script) for development.
 
+# Expose your NestJS port
 EXPOSE 3000
 
-CMD ["npm", "run", "start:dev"]
+# Start NestJS in watch/development mode
+CMD ["pnpm", "run", "start:dev"]
+
 
 # # Build stage
 # FROM node:20-alpine as build

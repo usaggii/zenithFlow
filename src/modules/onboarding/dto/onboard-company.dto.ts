@@ -11,7 +11,7 @@ export class OnboardCompanyDto {
   @ApiProperty({ example: 'vicmie' })
   @IsString()
   @Matches(/^[a-z0-9-]+$/, {
-    message: 'Subdomain can only contain lowercase letters, numbers, and hyphens',
+    message: 'subdomain can only contain lowercase letters, numbers, and hyphens',
   })
   @IsNotEmpty()
   subdomain!: string; 

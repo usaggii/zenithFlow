@@ -9,9 +9,9 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
 
   constructor() {
+    console.log('DB URL in PrismaService:', process.env.DATABASE_URL); 
     const pool = new Pool({ connectionString: process.env.DATABASE_URL });
     const adapter = new PrismaPg(pool);
-    // Initialize the client here
     this.client = new PrismaClient({ adapter });
   }
 
@@ -30,7 +30,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     this.logger.log('Disconnected from PostgreSQL database');
   }
 
-  // This getter allows you to use this.prisma.$transaction in other services
+  // This getter allows you to use this.prisma.$transaction() in other services
   get $transaction() {
     return this.client.$transaction.bind(this.client);
   }
